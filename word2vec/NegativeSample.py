@@ -109,7 +109,7 @@ class SkipGramNegativeSample(nn.Module):
         self.optimizer.step()
         return loss.item()
 
-###################数据处理部分
+###################数据处理部分 参考了 https://github.com/gutouyu/ML_CIA/tree/master/Embedding/code
 T = 1e-5
 CONTEXT_SIZE=2
 with open('text9', 'rb+') as f: 
