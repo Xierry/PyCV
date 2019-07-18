@@ -63,7 +63,7 @@ class SkipGramNegativeSample(nn.Module):
 
     def forward(self, iword, owords):
         '''前向传播'''
-        print('padding_idx:', self.ivectors(torch.LongTensor([1])))
+      
         if type(iword) is not torch.Tensor: # 检查输入的数据类型, 如果不是整型的tensor, 强制转换
             iword  = torch.LongTensor(iword)
             owords = torch.LongTensor(owords)
