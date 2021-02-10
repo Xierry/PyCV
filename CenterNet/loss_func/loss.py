@@ -11,7 +11,7 @@ class Loss:
     def __call__(self, logits, targets):
 
         pred_hm, pred_wh, pred_offset = logits   # -> [B, C, 120, 128], [B, 2, 120, 128], [B, 2, 120, 128]
-        gt_boxes, gt_classes, gt_hm, infos = targets
+        *_, gt_hm, infos = targets
 
         cls_loss = modified_focal_loss(pred_hm, gt_hm)
 
@@ -43,7 +43,7 @@ def l1_loss(pred_wh, pred_offset, info):
 
 
 def modified_focal_loss(logits, targets):
-    ''' # logits.clamp_(1e-12) # clamp min value is set to 1e-12 to maintain the numerical stability
+    '''
     Modified focal loss. the same as CornerNet.
       Arguments:
         logits: BCHW hm
@@ -66,4 +66,4 @@ def modified_focal_loss(logits, targets):
         loss = neg_loss
     else:
         loss = (pos_loss + neg_loss) / num_pos
-    return loss  
+    return loss
