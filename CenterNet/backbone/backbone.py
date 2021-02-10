@@ -3,7 +3,7 @@ import torchvision.models.resnet as resnet
 
 
 class ResnetBackbone(torch.nn.Module):
-    def __init__(self, backbone='r50', pretrained=False):
+    def __init__(self, backbone='resnet50', pretrained=False):
         super().__init__()
 
         self.encoder0, self.encoder1, self.encoder2, \
@@ -35,14 +35,11 @@ class FPN(torch.nn.Module):
 
         fmap3 = self.laterals[3](features[3]) # [B, 2048, 16, 16] -> [2, 1024, 16, 16]
         fmap2 = self.laterals[2](features[2] + torch.nn.functional.interpolate(
-                                 fmap3, scale_factor=2, mode="nearest")) 
-                                 # [B, 1024, 32, 32] -> [B, 512, 32, 32]
+                                 fmap3, scale_factor=2, mode="nearest")) # [B, 1024, 32, 32] -> [B, 512, 32, 32]
         fmap1 = self.laterals[1](features[1] + torch.nn.functional.interpolate(
-                                 fmap2, scale_factor=2, mode="nearest")) 
-                                 # [B, 512, 64, 64] -> [B, 256, 64, 64]
+                                 fmap2, scale_factor=2, mode="nearest")) # [B, 512, 64, 64] -> [B, 256, 64, 64]
         fmap0 = self.laterals[0](features[0] + torch.nn.functional.interpolate(
-                                 fmap1, scale_factor=2, mode="nearest")) 
-                                 # [B, 256, 128, 128] -> [B, 256, 128, 128]
+                                 fmap1, scale_factor=2, mode="nearest")) # [B, 256, 128, 128] -> [B, 256, 128, 128]
         fmap1 = self.smooths[0](torch.cat([fmap1, self.pooling(fmap0)], dim=1)) # [B, 256, 64, 64] -> [B, 512, 64, 64]
         fmap2 = self.smooths[1](torch.cat([fmap2, self.pooling(fmap1)], dim=1)) # [B, 512, 32, 32] -> [B, 1024, 32, 32]
         fmap3 = self.smooths[2](torch.cat([fmap3, self.pooling(fmap2)], dim=1)) # [B, 1024, 16, 16]-> [B, 2048, 16, 16]
