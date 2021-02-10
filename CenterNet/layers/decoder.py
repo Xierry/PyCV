@@ -1,10 +1,9 @@
-from torch import nn
+import torch.nn as nn
 
 
 class Decoder(nn.Module):
-    def __init__(self, inplanes, num_filters=(256, 256, 256), num_kernels=(4, 4, 4), bn_momentum=0.1, deconv_with_bias = False):
+    def __init__(self, inplanes, num_filters=(256, 256, 256), num_kernels=(4, 4, 4), bn_momentum=0.1, deconv_with_bias=False):
         super(Decoder, self).__init__()
-        # backbone output: [b, 2048, _h, _w]
         self.decoder = _make_deconv_layer(inplanes, num_filters, num_kernels, bn_momentum, deconv_with_bias)
 
     def forward(self, x):
