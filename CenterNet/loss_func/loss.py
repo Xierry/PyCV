@@ -10,14 +10,14 @@ class Loss:
 
     def __call__(self, logits, targets):
 
-        pred_hm, pred_wh, pred_offset = logits   # -> [B, C, 120, 128], [B, 2, 120, 128], [B, 2, 120, 128]
+        hm_logits, wh_logits, offset_logits = logits   # -> [B, C, 120, 128], [B, 2, 120, 128], [B, 2, 120, 128]
         *_, gt_hm, infos = targets
 
-        cls_loss = modified_focal_loss(pred_hm, gt_hm)
+        cls_loss = modified_focal_loss(hm_logits, gt_hm.to(hm_logits.device))
 
         num_objs = sum(len(info['ct']) for info in infos)
 
-        wh_losses, offset_losses = zip(*[l1_loss(*args) for args in zip(pred_wh, pred_offset, infos)])
+        wh_losses, offset_losses = zip(*[l1_loss(*args) for args in zip(wh_logits, offset_logits, infos)])
 
         reg_loss = self.beta * sum(wh_losses) + self.gamma * sum(offset_losses)
 
@@ -53,7 +53,7 @@ def modified_focal_loss(logits, targets):
     neg_inds = targets.lt(1).float()
 
     neg_weights = (1 - targets).pow(4)
-    
+
     pred_sigmoid = logits.sigmoid()
     pos_loss = - F.logsigmoid(logits) * (1 - pred_sigmoid).pow(2) * pos_inds
     neg_loss = logits.exp().add(1.0).log() * pred_sigmoid.pow(2) * neg_weights * neg_inds
