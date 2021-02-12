@@ -25,7 +25,7 @@ class CenterNet(torch.nn.Module):
         self.upsample = Decoder(inplanes=self.backbone.outplanes,
                                 bn_momentum=cfg.bn_momentum if cfg else 0.1, 
                                 deconv_with_bias=cfg.deconv_with_bias if cfg else False)
-        self.predictor = HeadPredictor(num_classes=num_classes, channel=64)
+        self.predictor = HeadPredictor(num_classes=num_classes, channel=cfg.head_channel if cfg else 64)
         self.loss_func = Loss(cfg)
         self.post_processor = PostProcessor(topk=cfg.topk if cfg else 40, threshold=cfg.threshold if cfg else 0.1)
         self.to(self.device)
@@ -36,7 +36,7 @@ class CenterNet(torch.nn.Module):
         out = self.upsample(fmap)
         hm, wh, offset=self.predictor(out)
         if self.training:
-            return self.loss_func(preds=[hm, wh, offset], targets=targets)
+            return self.loss_func(logits=[hm, wh, offset], targets=targets)
 
         return self.post_processor(hm.sigmoid(), wh, offset.tanh())
 
