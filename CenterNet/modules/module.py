@@ -1,3 +1,7 @@
+import cv2
+import numpy as np
+from matplotlib import pyplot as plt
+
 import torch
 from ..backbone.backbone import ResnetBackbone
 from ..layers.decoder import Decoder
@@ -23,7 +27,7 @@ class CenterNet(torch.nn.Module):
         self.backbone = ResnetBackbone(backbone=cfg.backbone if cfg else backbone, 
                                        pretrained=cfg.pretrained if cfg else False)
         self.upsample = Decoder(inplanes=self.backbone.outplanes,
-                                bn_momentum=cfg.bn_momentum if cfg else 0.1, 
+                                bn_momentum=cfg.bn_momentum if cfg else 0.1,
                                 deconv_with_bias=cfg.deconv_with_bias if cfg else False)
         self.predictor = HeadPredictor(num_classes=num_classes, channel=cfg.head_channel if cfg else 64)
         self.loss_func = Loss(cfg)
@@ -40,6 +44,34 @@ class CenterNet(torch.nn.Module):
 
         return self.post_processor(hm.sigmoid(), wh, offset.tanh())
 
+    @torch.no_grad()
+    def detect_one_image(self, image_dir, threshold=0.2, classes=('circle', )):
+        self.eval()
+
+        rgb_image = cv2.imread(image_dir)[..., (2,1,0)]
+        X, (image_h, image_w), *_ = preprocess_img(rgb_image)
+                                                   
+        detects = self(X.to(self.device))
+
+        colors = plt.cm.hsv(np.linspace(0, 1, len(classes))).tolist()
+        plt.figure(figsize=(12, 12))
+        plt.imshow(rgb_image)
+        currentAxis = plt.gca()
+        for i, (boxes, scores, labels) in enumerate(detects):
+            for box, score, label in zip(boxes, scores, labels): # [topk, 4], [topk], [topk]
+                score, label = score.item(), label.long().item()
+                if score < threshold:
+                    continue
+                label_name = classes[label]
+                display_txt = '{}: {:.2f}'.format(label_name, score)
+                color = colors[label]
+
+                pt = box.detach().cpu().numpy() * (image_w, image_h,image_w, image_h)
+                coords = (pt[0], pt[1]), pt[2]-pt[0]+1, pt[3]-pt[1]+1
+                currentAxis.add_patch(plt.Rectangle(*coords, fill=False, edgecolor=color, linewidth=2))
+                currentAxis.text(pt[0], pt[1], display_txt, bbox={'facecolor':color, 'alpha':0.5})
+        plt.show()
+
 
 class PostProcessor:
     def __init__(self, topk=100, threshold=0.1):
@@ -50,7 +82,7 @@ class PostProcessor:
     def __call__(self, hm_preds, wh_preds, offset_preds):
 
         batch_size, _, fmap_h, fmap_w = hm_preds.shape
-        box_scale = torch.as_tensor([fmap_w, fmap_h, fmap_w, fmap_h], dtype=torch.float32)
+        box_scale = torch.as_tensor([fmap_w, fmap_h, fmap_w, fmap_h], dtype=torch.float32, device=hm_preds.device)
         hm_preds = pool_nms(hm_preds) # [B, C, fmap_h, fmap_w] -> [B, C, fmap_h, fmap_w]
 
         scores, index, clses, ys, xs = topk_score(hm_preds, self.topk) # -> all shapes are [B, topk]
@@ -125,3 +157,26 @@ def gather_feature(fmap, index, mask=None, use_transform=False):
 # out[i][j][k] = input[index[i][j][k]][j][k]  # if dim == 0 
 # out[i][j][k] = input[i][index[i][j][k]][k]  # if dim == 1
 # out[i][j][k] = input[i][j][index[i][j][k]]  # if dim == 2
+
+def preprocess_img(image, input_size=512, pad=32, th_pad=22,
+                   mean=(0.485, 0.456, 0.406), 
+                   std=(0.229, 0.224, 0.225)):
+
+    image_h, image_w, _ = image.shape
+    if image_h < image_w:
+        resize_w = input_size
+        resize_h = int(image_h * input_size / image_w + 0.5)
+        pad_pos, pad_neg = (input_size - resize_h) % pad, resize_h % pad
+        _pad = pad_pos if pad_pos < th_pad else -pad_neg
+        resize_h = resize_h + _pad
+    else:
+        resize_h = input_size
+        resize_w = int(image_w * input_size / image_h + 0.5)
+        pad_pos, pad_neg = (input_size - resize_w) % pad, resize_w % pad
+        _pad = pad_pos if pad_pos < th_pad else -pad_neg
+        resize_w = resize_w + _pad
+
+    image=torch.as_tensor(
+        (cv2.resize(image, (resize_w, resize_h)) / 255.0 - mean) / std, dtype=torch.float32
+    ).permute(2,0,1).unsqueeze(0)
+    return image, (image_h, image_w), (resize_h, resize_w)
