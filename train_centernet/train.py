@@ -64,12 +64,9 @@ if __name__ == "__main__":
         #     net.eval()
         #     with torch.no_grad():
         #         detections = net(images)
-        #     vSet.show_images(image_idxes, results=detections, threshold=0.26, step='{}_pred'.format(step))
+        #     vSet.show_images(image_idxes, results=detections, threshold=0.6, step='{}_pred'.format(step))
         #     net.train() # if step > 2: break
 
     weights='./weights/centernet.pth'
     torch.save({k: tensor.detach().cpu() for k, tensor in net.state_dict().items()}, weights)
     net.load_state_dict(torch.load(weights))
-
-    # r = net.to('cpu').detect_one_image(
-    # cv2.resize(cv2.imread('./weights/pikachu.jpg'), (512, 512))[..., (2,1,0)], th=0.05)
