@@ -15,7 +15,7 @@ class Loss:
 
         cls_loss = modified_focal_loss(hm_logits, gt_hm.to(hm_logits.device))
 
-        num_objs = sum(len(info['ct']) for info in infos)
+        num_objs = sum(info['ct'].size(-1) for info in infos) # sum(len(info['ct']) for info in infos)
 
         wh_losses, offset_losses = zip(*[l1_loss(*args) for args in zip(wh_logits, offset_logits, infos)])
 
