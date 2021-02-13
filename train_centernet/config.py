@@ -1,12 +1,10 @@
-
-
 class Config:
     ################ 模型部分
-    num_classes = 1 # 类别数量, (不包括背景)
-    backbone = 'r18'# backbone 使用的骨架网络
+    num_classes = 2 # 类别数量, (不包括背景)
+    backbone = 'resnet50'# backbone 使用的骨架网络
 
-    lr = 6e-4
-    batch_size = 4
+    lr = 1e-3
+    batch_size = 8
     gradient_accumulation=4
     device='cuda:0'
     clip_value = 100
@@ -23,9 +21,8 @@ class Config:
     AMSGRAD = True
     
     root = '../../Data/voc_all/VOC2007/'
-    # split = 'trainval'
     resize_size = 512
-    num_workers = 0
+    num_workers = 4
     
     mean=(0.485, 0.456, 0.406)
     std=(0.229, 0.224, 0.225)
@@ -36,10 +33,9 @@ class Config:
     lr_schedule = 'WarmupMultiStepLR'
     weight_decay = 1e-4
     gamma = 0.3 # 0.1
-    milestones = (1500, 2000, 2500, 3000)
-    max_iter = 3000
-    
-    warmup_iters = 1000
+    warmup_iters = 10000
+    milestones = (15000, 20000, 25000, 30000)
+    max_iter = 30000
 
     # freeze_bn = True
     bn_momentum = 0.1
