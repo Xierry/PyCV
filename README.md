@@ -6,6 +6,6 @@
 
 模型源码在PyCV/CenterNet文件夹下, 链接https://github.com/Xierry/PyCV/tree/master/CenterNet
 
-可以在PyCV/train_centernet/voc.py中自定义自己的数据集, 自己修改self.idx_to_className类别属性, self._read_rgb_image图片读取函数和self._get_annotation标签读取即可https://github.com/Xierry/PyCV/tree/master/train_centernet/voc.py
+可以在PyCV/train_centernet/voc.py中自定义自己的数据集, 自己修改类别属性(self.idx_to_className), 图片读取函数(self._read_rgb_image)和标签读取函数(self._get_annotation)即可https://github.com/Xierry/PyCV/tree/master/train_centernet/voc.py
 
 PyCV/train_centernet/train.py为个人写的参考简单训练脚本, 五脏俱全仅供参考https://github.com/Xierry/PyCV/tree/master/train_centernet/train.py
